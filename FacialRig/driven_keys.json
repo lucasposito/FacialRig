@@ -1,0 +1,381 @@
+{
+    "shapes": {
+        "l_brows_in": [
+            "l_brow_in_ctrl.tx",
+            1
+        ],
+        "l_brows_inner_down": [
+            "l_brow_inner_lower_ctrl.tx",
+            1
+        ],
+        "l_brows_inner_up": [
+            "l_brow_inner_raise_ctrl.tx",
+            1
+        ],
+        "l_brows_outer_down": [
+            "l_brow_outer_lower_ctrl.tx",
+            1
+        ],
+        "l_brows_outer_up": [
+            "l_brow_outer_raise_ctrl.tx",
+            1
+        ],
+        "l_cheek": [
+            "l_cheek_ctrl.tx",
+            1
+        ],
+        "l_lips_frown": [
+            "l_frown_ctrl.tx",
+            1
+        ],
+        "l_lips_down": [
+            "l_lower_lip_lower_ctrl.tx",
+            1
+        ],
+        "l_lips_smile": [
+            "l_smile_ctrl.tx",
+            1
+        ],
+        "l_nose": [
+            "l_sneer_ctrl.tx",
+            1
+        ],
+        "l_lips_up": [
+            "l_upper_lip_raise_ctrl.tx",
+            1
+        ],
+        "r_brows_in": [
+            "r_brow_in_ctrl.tx",
+            1
+        ],
+        "r_brows_inner_down": [
+            "r_brow_inner_lower_ctrl.tx",
+            1
+        ],
+        "r_brows_inner_up": [
+            "r_brow_inner_raise_ctrl.tx",
+            1
+        ],
+        "r_brows_outer_down": [
+            "r_brow_outer_lower_ctrl.tx",
+            1
+        ],
+        "r_brows_outer_up": [
+            "r_brow_outer_raise_ctrl.tx",
+            1
+        ],
+        "r_cheek": [
+            "r_cheek_ctrl.tx",
+            1
+        ],
+        "r_lips_frown": [
+            "r_frown_ctrl.tx",
+            1
+        ],
+        "r_lips_down": [
+            "r_lower_lip_lower_ctrl.tx",
+            1
+        ],
+        "r_lips_smile": [
+            "r_smile_ctrl.tx",
+            1
+        ],
+        "r_nose": [
+            "r_sneer_ctrl.tx",
+            1
+        ],
+        "r_lips_up": [
+            "r_upper_lip_raise_ctrl.tx",
+            1
+        ],
+        "l_lips_purse": [
+            "l_wide_ctrl.tx",
+            -1
+        ],
+        "l_lips_wide": [
+            "l_wide_ctrl.tx",
+            1
+        ],
+        "r_lips_purse": [
+            "r_wide_ctrl.tx",
+            -1
+        ],
+        "r_lips_wide": [
+            "r_wide_ctrl.tx",
+            1
+        ],
+        "l_eyelid_upper_goggle": [
+            "l_upper_eyelid_ctrl.tx",
+            -1
+        ],
+        "l_eyelid_upper_close": [
+            "l_upper_eyelid_ctrl.tx",
+            1
+        ],
+        "l_eyelid_lower_goggle": [
+            "l_lower_eyelid_ctrl.tx",
+            -1
+        ],
+        "l_eyelid_lower_close": [
+            "l_lower_eyelid_ctrl.tx",
+            1
+        ],
+        "r_eyelid_upper_goggle": [
+            "r_upper_eyelid_ctrl.tx",
+            -1
+        ],
+        "r_eyelid_upper_close": [
+            "r_upper_eyelid_ctrl.tx",
+            1
+        ],
+        "r_eyelid_lower_goggle": [
+            "r_lower_eyelid_ctrl.tx",
+            -1
+        ],
+        "r_eyelid_lower_close": [
+            "r_lower_eyelid_ctrl.tx",
+            1
+        ],
+        "r_mouth": [
+            "mouth_ctrl.tx",
+            -1
+        ],
+        "l_mouth": [
+            "mouth_ctrl.tx",
+            1
+        ],
+        "mouth_down": [
+            "mouth_ctrl.ty",
+            -1
+        ],
+        "mouth_up": [
+            "mouth_ctrl.ty",
+            1
+        ]
+    },
+    "poses": {
+        "fidget_ctrl.tx": {},
+        "head_ctrl.tx": {},
+        "l_brow_in_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_brows_in": 1.0
+            }
+        },
+        "l_brow_inner_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_brows_inner_down": 1.0
+            }
+        },
+        "l_brow_inner_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_brows_inner_up": 1.0
+            }
+        },
+        "l_brow_outer_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_brows_outer_down": 1.0
+            }
+        },
+        "l_brow_outer_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_brows_outer_up": 1.0
+            }
+        },
+        "l_cheek_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_cheek": 1.0
+            }
+        },
+        "l_frown_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_lips_frown": 1.0
+            }
+        },
+        "l_lower_lip_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_lips_down": 1.0
+            }
+        },
+        "l_smile_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_lips_smile": 1.0
+            }
+        },
+        "l_sneer_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_nose": 1.0
+            }
+        },
+        "l_upper_lip_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.l_lips_up": 1.0
+            }
+        },
+        "lipSeal_ctrl.tx": {},
+        "r_brow_in_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_brows_in": 1.0
+            }
+        },
+        "r_brow_inner_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_brows_inner_down": 1.0
+            }
+        },
+        "r_brow_inner_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_brows_inner_up": 1.0
+            }
+        },
+        "r_brow_outer_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_brows_outer_down": 1.0
+            }
+        },
+        "r_brow_outer_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_brows_outer_up": 1.0
+            }
+        },
+        "r_cheek_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_cheek": 1.0
+            }
+        },
+        "r_frown_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_lips_frown": 1.0
+            }
+        },
+        "r_lower_lip_lower_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_lips_down": 1.0
+            }
+        },
+        "r_smile_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_lips_smile": 1.0
+            }
+        },
+        "r_sneer_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_nose": 1.0
+            }
+        },
+        "r_upper_lip_raise_ctrl.tx": {
+            "1": {
+                "core_blendshapes.r_lips_up": 1.0
+            }
+        },
+        "l_wide_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.l_lips_purse": 1.0
+            },
+            "1": {
+                "core_blendshapes.l_lips_wide": 1.0
+            }
+        },
+        "r_wide_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.r_lips_purse": 1.0
+            },
+            "1": {
+                "core_blendshapes.r_lips_wide": 1.0
+            }
+        },
+        "l_upper_eyelid_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.l_eyelid_upper_goggle": 1.0
+            },
+            "1": {
+                "core_blendshapes.l_eyelid_upper_close": 1.0
+            }
+        },
+        "l_lower_eyelid_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.l_eyelid_lower_goggle": 1.0
+            },
+            "1": {
+                "core_blendshapes.l_eyelid_lower_close": 1.0
+            }
+        },
+        "r_upper_eyelid_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.r_eyelid_upper_goggle": 1.0
+            },
+            "1": {
+                "core_blendshapes.r_eyelid_upper_close": 1.0
+            }
+        },
+        "r_lower_eyelid_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.r_eyelid_lower_goggle": 1.0
+            },
+            "1": {
+                "core_blendshapes.r_eyelid_lower_close": 1.0
+            }
+        },
+        "mouth_ctrl.tx": {
+            "-1": {
+                "core_blendshapes.r_mouth": 1.0
+            },
+            "1": {
+                "core_blendshapes.l_mouth": 1.0
+            }
+        },
+        "mouth_ctrl.ty": {
+            "-1": {
+                "core_blendshapes.mouth_down": 1.0
+            },
+            "1": {
+                "core_blendshapes.mouth_up": 1.0
+            }
+        },
+        "jaw_ctrl.ty": {
+            "1": {
+                "bn_jaw_Exp.ty": -2.0,
+                "bn_jaw_Exp.rx": 10.0
+            }
+        },
+        "jaw_ctrl.tx": {
+            "-1": {
+                "bn_jaw_Exp.rz": -20.0
+            },
+            "1": {
+                "bn_jaw_Exp.rz": 20.0
+            }
+        },
+        "l_eye_ctrl.tx": {
+            "-1": {
+                "bn_L_eye_Exp.ry": -34.0
+            },
+            "1": {
+                "bn_L_eye_Exp.ry": 37.0
+            }
+        },
+        "l_eye_ctrl.ty": {
+            "-1": {
+                "bn_L_eye_Exp.rx": 22.0
+            },
+            "1": {
+                "bn_L_eye_Exp.rx": -12.0
+            }
+        },
+        "r_eye_ctrl.tx": {
+            "-1": {
+                "bn_R_eye_Exp.ry": -37.0
+            },
+            "1": {
+                "bn_R_eye_Exp.ry": 34.0
+            }
+        },
+        "r_eye_ctrl.ty": {
+            "-1": {
+                "bn_R_eye_Exp.rx": 22.0
+            },
+            "1": {
+                "bn_R_eye_Exp.rx": -12.0
+            }
+        }
+    }
+}
