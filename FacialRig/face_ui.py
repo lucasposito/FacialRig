@@ -1,3 +1,4 @@
+
 from maya.api import OpenMaya, OpenMayaAnim
 from maya import OpenMayaUI, cmds, mel
 
@@ -10,6 +11,9 @@ import MayaData
 # import Speedball
 
 import math
+import json
+
+from pathlib import Path
 from PySide2 import QtWidgets, QtCore, QtGui
 from shiboken2 import wrapInstance
 from functools import partial
@@ -21,8 +25,8 @@ Author: Lucas Esposito
 
 
 def maya_main_window():
-    main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-    return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+    maya_window = OpenMayaUI.MQtUtil.mainWindow()
+    return wrapInstance(int(maya_window), QtWidgets.QWidget)
 
 
 class SceneScale:
@@ -40,18 +44,21 @@ class SceneScale:
 
 
 class FaceUI(QtWidgets.QDialog):
-    ui_instance = None
+    UI_INSTANCE = None
+    COLOR_SET_NAME = 'FaceRigColorSet'
+    FILE_FILTER = 'Json (*.json)'
+    MAYA_DIALOG = QtWidgets.QDialog(maya_main_window())
 
     @classmethod
     def show_ui(cls):
-        if not cls.ui_instance:
-            cls.ui_instance = FaceUI()
+        if not cls.UI_INSTANCE:
+            cls.UI_INSTANCE = FaceUI()
 
-        if cls.ui_instance.isHidden():
-            cls.ui_instance.show()
+        if cls.UI_INSTANCE.isHidden():
+            cls.UI_INSTANCE.show()
         else:
-            cls.ui_instance.raise_()
-            cls.ui_instance.activateWindow()
+            cls.UI_INSTANCE.raise_()
+            cls.UI_INSTANCE.activateWindow()
 
     def __init__(self, parent=maya_main_window()):
         super(FaceUI, self).__init__(parent)
@@ -84,7 +91,8 @@ class FaceUI(QtWidgets.QDialog):
     def closeEvent(self, event):
         if self.edit_mode:
             self.edit_mask_button.setStyleSheet("")
-            self.edit_mode = not self.edit_mode
+            self.toggle_mask_mode()
+            # self.edit_mode = not self.edit_mode
 
     def set_masks_layout(self):
         self.masks_layout = QtWidgets.QVBoxLayout()
@@ -138,10 +146,12 @@ class FaceUI(QtWidgets.QDialog):
         self.masks_layout.addWidget(masks_label)
         self.masks_layout.addWidget(self.masks_widget)
 
-        for mask in BlendShapeData.MASKS:
+        for mask in sorted(BlendShapeData.MASKS):
             item = QtWidgets.QListWidgetItem(mask)
             item.setFont(self.default_font)
             self.masks_widget.addItem(item)
+
+        self.masks_widget.setCurrentItem(self.masks_widget.item(0))
 
         self.masks_layout.addLayout(load_layout)
         self.masks_layout.addLayout(weights_layout)
@@ -199,33 +209,51 @@ class FaceUI(QtWidgets.QDialog):
         self.load_mesh_button.clicked.connect(self.set_base_head)
         self.edit_mask_button.clicked.connect(self.toggle_mask_mode)
         self.flood_button.clicked.connect(self.set_vtx_value)
+        self.mirror_button.clicked.connect(self.mirror_mask)
+        self.import_button.clicked.connect(self.import_mask)
+        self.export_button.clicked.connect(self.export_mask)
         self.masks_widget.itemSelectionChanged.connect(self.load_mask)
 
     @staticmethod
-    def check_existence(button_widget):
+    def highlight_item(list_item_widget, exists=True):
         red = QtGui.QColor(255, 182, 193)
         green = QtGui.QColor(168, 216, 168)
+        black = QtGui.QColor(0, 0, 0)
 
-        if cmds.objExists(button_widget.text()):
-            button_widget.setStyleSheet(f"background-color: {green.name()}; color: black;")
+        list_item_widget.setForeground(black)
+        if not exists:
+            list_item_widget.setBackground(red)
             return
-
-        button_widget.setStyleSheet(f"background-color: {red.name()}; color: black;")
-        return button_widget.text()
+        list_item_widget.setBackground(green)
 
     @staticmethod
-    def check_vtx_count(main_mesh, button_widget):
-        red = QtGui.QColor(255, 182, 193)
+    def check_existence(list_widget, base_head):
+        missing_shapes = list()
+        not_matching = list()
+        for row in range(list_widget.count()):
+            shape_item = list_widget.item(row)
+            if not cmds.objExists(shape_item.text()):
+                missing_shapes.append(shape_item.text())
+                FaceUI.highlight_item(shape_item, False)
+                continue
+            FaceUI.highlight_item(shape_item)
 
+            unmatched = FaceUI.check_vtx_count(base_head, shape_item)
+            if unmatched:
+                not_matching.append(unmatched)
+        return missing_shapes, not_matching
+
+    @staticmethod
+    def check_vtx_count(main_mesh, list_widget):
         main_mesh = OpenMaya.MSelectionList().add(main_mesh).getDagPath(0)
-        sec_mesh = OpenMaya.MSelectionList().add(button_widget.text()).getDagPath(0)
+        sec_mesh = OpenMaya.MSelectionList().add(list_widget.text()).getDagPath(0)
 
         main_count = OpenMaya.MFnMesh(main_mesh).numVertices
         sec_count = OpenMaya.MFnMesh(sec_mesh).numVertices
 
         if main_count != sec_count:
-            button_widget.setStyleSheet(f"background-color: {red.name()}; color: black;")
-            return button_widget.text()
+            FaceUI.highlight_item(list_widget, False)
+            return list_widget.text()
 
     @staticmethod
     def lerp(start, end, t):
@@ -246,45 +274,23 @@ class FaceUI(QtWidgets.QDialog):
             t = (value - 0.8) / 0.2
             return 1.0, FaceUI.lerp(0.5, 0.0, t), 0.0
 
-    # @staticmethod
-    # def get_color_ramp_value(value):
-    #     if value <= 0.4:
-    #         # Linear interpolation between (0, 0, 255) and (0, 255, 0) for the range [0.0, 0.4]
-    #         r = 0
-    #         g = int(255 * (value / 0.4))
-    #         b = int(255 - 255 * (value / 0.4))
-    #     elif value <= 0.6:
-    #         # Linear interpolation between (0, 255, 0) and (255, 255, 0) for the range [0.4, 0.6]
-    #         r = int(255 * ((value - 0.4) / 0.2))
-    #         g = 255
-    #         b = int(255 - 255 * ((value - 0.4) / 0.2))
-    #     elif value <= 0.8:
-    #         # Linear interpolation between (255, 255, 0) and (255, 128, 0) for the range [0.6, 0.8]
-    #         r = 255
-    #         g = int(255 - 127 * ((value - 0.6) / 0.2))
-    #         b = int(255 - 127 * ((value - 0.6) / 0.2))
-    #     else:
-    #         # Linear interpolation between (255, 128, 0) and (255, 0, 0) for the range [0.8, 1.0]
-    #         r = 255
-    #         g = int(128 - 128 * ((value - 0.8) / 0.2))
-    #         b = 0
-    #
-    #     return r, g, b
-
     def toggle_mask_mode(self):
         if not self.base_head:
             return
 
+        self.load_mask()
         self.edit_mode = not self.edit_mode
+
+        sel_list = OpenMaya.MSelectionList().add(self.base_head)
+        OpenMaya.MGlobal.setActiveSelectionList(sel_list, OpenMaya.MGlobal.kReplaceList)
+        mel.eval('toggleShadeMode;')
+
         if not self.edit_mode:
             self.edit_mask_button.setStyleSheet("")
             return
 
-        mel.eval('PaintVertexColorToolOptions;')
-
         green = QtGui.QColor(168, 216, 168)
         self.edit_mask_button.setStyleSheet(f"background-color: {green.name()}; color: black;")
-        self.load_mask()
 
     def set_base_head(self):
         active_list = OpenMaya.MGlobal.getActiveSelectionList()
@@ -331,29 +337,43 @@ class FaceUI(QtWidgets.QDialog):
 
         vtx_color = self.get_color_ramp(value)
 
-        color_array = OpenMaya.MColorArray()
         mesh_mfn = OpenMaya.MFnMesh(path)
         comp_mfn = OpenMaya.MFnSingleIndexedComponent(comp)
-        selected_vertices = comp_mfn.getElements()
-
-        [color_array.append(OpenMaya.MColor(vtx_color)) for i in selected_vertices]
-        mesh_mfn.setVertexColors(color_array, selected_vertices)
-
         mask = self.masks_widget.currentItem()
+
         if mask.text() not in self.masks:
             self.masks[mask.text()] = dict()
+            neutral_color = self.get_color_ramp(0)
+
+            all_vertices = range(mesh_mfn.numVertices)
+            no_color_array = OpenMaya.MColorArray([OpenMaya.MColor(neutral_color) for _ in all_vertices])
+
+            mesh_mfn.setVertexColors(no_color_array, all_vertices)
+            self.highlight_item(self.masks_widget.currentItem())
+
+            for vtx in all_vertices:
+                self.masks[mask.text()][vtx] = 0.0
+
+        selected_vertices = comp_mfn.getElements()
+
+        color_array = OpenMaya.MColorArray([OpenMaya.MColor(vtx_color) for _ in selected_vertices])
+        mesh_mfn.setVertexColors(color_array, selected_vertices)
+
         for vtx in selected_vertices:
             self.masks[mask.text()][vtx] = value
 
     def load_mask(self):
-        base_head = OpenMaya.MSelectionList().add(self.base_head).getDagPath(0)
-        mesh_mfn = OpenMaya.MFnMesh(base_head)
-        try:
-            color_set_name = mesh_mfn.currentColorSetName()
-            mesh_mfn.deleteColorSet(color_set_name)
-            mesh_mfn.createColorSet(color_set_name, True)
-        except RuntimeError:
-            pass
+        sel_list = OpenMaya.MSelectionList().add(self.base_head)
+        mesh_mfn = OpenMaya.MFnMesh(sel_list.getDagPath(0))
+
+        if self.COLOR_SET_NAME in mesh_mfn.getColorSetNames():
+            mesh_mfn.deleteColorSet(self.COLOR_SET_NAME)
+
+        if not self.edit_mode:
+            return
+
+        mesh_mfn.createColorSet(self.COLOR_SET_NAME, True)
+        cmds.polyColorSet(self.base_head, cs=self.COLOR_SET_NAME, ccs=True)
 
         mask = self.masks_widget.currentItem()
         if mask.text() not in self.masks:
@@ -363,8 +383,44 @@ class FaceUI(QtWidgets.QDialog):
         for color in list(self.masks[mask.text()].values()):
             color_array.append(OpenMaya.MColor(self.get_color_ramp(color)))
 
-        mesh_mfn.setVertexColors(color_array, list(self.masks[mask.text()].keys()))
+        mesh_mfn.setVertexColors(color_array, list(map(int, self.masks[mask.text()].keys())))
 
+    def mirror_mask(self):
+        pass
+
+    def import_mask(self):
+        if not self.base_head:
+            print('The base head mesh is missing')
+            return
+
+        file_paths, selected_filter = QtWidgets.QFileDialog.getOpenFileNames(self.MAYA_DIALOG, 'Import Masks', '', self.FILE_FILTER)
+        if not file_paths:
+            return
+
+        mask_items = [self.masks_widget.item(i) for i in range(self.masks_widget.count())]
+        for file in file_paths:
+            file = Path(file)
+            mask = [mask for mask in mask_items if file.stem == mask.text()]
+            if not mask:
+                continue
+            if file.stem in self.masks:
+                del self.masks[file.stem]
+
+            self.highlight_item(mask[0])
+
+            with open(str(file), 'r') as f:
+                self.masks[file.stem] = json.loads(f.read())
+
+    def export_mask(self):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory(self.MAYA_DIALOG, 'Export Masks', QtCore.QDir.homePath())
+        if not dir_path:
+            return
+
+        for mask in self.masks:
+            file_path = Path(dir_path) / f'{mask}.json'
+            with open(file_path, 'w') as f:
+                f.write(json.dumps(self.masks[mask], indent=4))
+    
     def update_values_box(self, value):
         self.values_box.setValue(value / 100.0)
 
@@ -375,9 +431,7 @@ class FaceUI(QtWidgets.QDialog):
         self.global_scale = SceneScale()
         active_list = OpenMaya.MGlobal.getActiveSelectionList()
 
-        try:
-            selection_list = OpenMaya.MSelectionList().add(BlendShapeData.BASE)
-        except RuntimeError:
+        if not self.base_head:
             print('The base head mesh is missing')
             return
 
@@ -395,31 +449,28 @@ class FaceUI(QtWidgets.QDialog):
             print('Please select a mesh type object')
             return
 
-        base_head = selection_list.getDagPath(0)
-        self.base_head = base_head.partialPathName()
+        # Check if all masks have data
+        missing_masks = list()
+        for row in range(self.masks_widget.count()):
+            mask_item = self.masks_widget.item(row)
+            if mask_item.text() not in self.masks:
+                missing_masks.append(mask_item.text())
+                self.highlight_item(mask_item, False)
+                continue
+            self.highlight_item(mask_item)
 
-        if not OpenMaya.MFnDagNode(base_head).typeName == 'transform':
-            print('Please select a mesh type object')
-            self.base_head = None
-            return
-        if not base_head.extendToShape().hasFn(OpenMaya.MFn.kMesh):
-            print('Please select a mesh type object')
-            self.base_head = None
+        if missing_masks:
+            print(f'The following masks don\'t contain any data:')
+            print(missing_masks)
             return
 
         missing_shapes = list()
         not_matching = list()
-        for shape_row in range(self.blendshapes_layout.rowCount()):
-            shape_widget = self.blendshapes_layout.itemAt(shape_row, QtWidgets.QFormLayout.FieldRole).widget()
-            if not isinstance(shape_widget, QtWidgets.QPushButton):
-                continue
-            non_existent = self.check_existence(shape_widget)
-            if non_existent:
-                missing_shapes.append(non_existent)
-                continue
-            unmatched = self.check_vtx_count(self.base_head, shape_widget)
-            if unmatched:
-                not_matching.append(unmatched)
+
+        for shapes in [self.shapes_widget, self.corrective_widget]:
+            a, b = self.check_existence(shapes, self.base_head)
+            missing_shapes.extend(a)
+            not_matching.extend(b)
 
         if missing_shapes:
             print(f'The following shapes weren\'t found in the scene:')
@@ -431,7 +482,10 @@ class FaceUI(QtWidgets.QDialog):
             print(not_matching)
             return
 
-        self.data = BlendShape(self.base_head, self.global_scale.factor)
+        if self.edit_mode:
+            self.toggle_mask_mode()
+
+        self.data = BlendShape(self.base_head, self.masks, self.global_scale.factor)
         self.data.create()
         # self.create_controls(target_mesh)
 
@@ -470,7 +524,7 @@ class FaceUI(QtWidgets.QDialog):
         lib.set_key(node, attribute, neutral_value, self.current_frame)
 
     def create_controls(self, target_mesh):
-
+        # TODO: Get skinned body from Base Head
         if not self.face_board:
             if not self.data:
                 print('Couldn\'t find blendshapes')

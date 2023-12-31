@@ -18,12 +18,6 @@ class BlendShapeData:
     CORRECTIVES = blendshapes['correctives']
     BLENDSHAPES = blendshapes['blendshapes']
     MASKS = blendshapes['masks']
-    MASKS_DATA = dict()
-    MASKS_PATH = Path(__file__).parent / 'masks'
-
-    for mask in MASKS_PATH.iterdir():
-        with open(str(mask), 'r') as f:
-            MASKS_DATA[mask.stem] = json.loads(f.read())
 
 
 def get_blendshape(mesh):
@@ -52,7 +46,7 @@ def get_blendshape(mesh):
 
 
 class BlendShape:
-    def __init__(self, main_mesh, global_scale=1.0):
+    def __init__(self, main_mesh, masks, global_scale=1.0):
         main_mesh = OpenMaya.MSelectionList().add(main_mesh).getDagPath(0)
         self.main_mesh = OpenMaya.MFnMesh(main_mesh)
 
@@ -60,6 +54,7 @@ class BlendShape:
 
         self.blend_node = get_blendshape(self.main_mesh.name())
 
+        self.masks_data = masks
         self.shapes = dict()
         self.correctives = dict()
 
@@ -142,29 +137,15 @@ class BlendShape:
         shape_plug = group_plug.elementByLogicalIndex(shape_index)
         return shape_plug.child(1)
 
-    def save_mask(self, name, shape_index):
-        """_summary_
-
-        Args:
-            name (str): Mask name related to specific file in masks directory
-            shape_index (int): Shape target number to extract the mask from
-        """
-        
-        plug = self.get_mask_plug(shape_index)
-        data = dict()
-        for vtx in range(plug.numElements()):
-            data[vtx] = round(plug.elementByLogicalIndex(vtx).asDouble(), 3)
-
-        with open(str(BlendShapeData.MASKS_PATH / f'{name}.json'), 'w') as f:
-            f.write(json.dumps(data, indent=4))
-    
     def set_mask(self, name, shape_index):
         plug = self.get_mask_plug(shape_index)
-        for vtx, value in BlendShapeData.MASKS_DATA[name].items():
+        for vtx, value in self.masks_data[name].items():
             plug.elementByLogicalIndex(int(vtx)).setDouble(float(value))
 
     def set_combination_shape(self, name, shape_index, driver_targets):
         first_target, sec_target = driver_targets
+
+        # TODO: edit corrective shapes before assigning the blendshape
 
         cmds.blendShape(self.blend_node, edit=True, t=[self.main_mesh.name(), shape_index, name, 1.0])
         cmds.combinationShape(bs=self.blend_node, cti=shape_index, cm=0, dti=[first_target, sec_target])
@@ -215,16 +196,17 @@ class BlendShape:
             if flip:
                 self.flip_symmetry(target_mesh, self.current_scale)
 
-            if not sec_target:
+            if sec_target:
+                self.set_combination_shape(shape_name, index, [first_target, sec_target])
+            else:
                 cmds.blendShape(self.blend_node, edit=True, t=[self.main_mesh.name(), index, target_mesh, 1.0])
 
-                cmds.delete(target_mesh)
-                cmds.rename(base_shape, base_name)
+            cmds.delete(target_mesh)
+            cmds.rename(base_shape, base_name)
 
-                self.set_mask(BlendShapeData.MASKS[mask], index)
+            self.set_mask(BlendShapeData.MASKS[mask], index)
 
             # TODO: set the shape in edit mode when adding combination shape
-            self.set_combination_shape(shape_name, index, [first_target, sec_target])
 
     def duplicate_n_apply_masks(self):
         blend_node = OpenMaya.MSelectionList().add(self.blend_node).getDependNode(0)
