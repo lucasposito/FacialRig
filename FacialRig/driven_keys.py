@@ -10,8 +10,10 @@ with open(str(Path(__file__).parent / 'driven_keys.json'), 'r') as f:
 with open(str(Path(__file__).parent / 'driven_keys_joints.json'), 'r') as f:
     driven_keys_joints = json.loads(f.read())
 
+
 def get():
     pass
+
 
 def load_driven_keys(data, global_scale=1.0):
 

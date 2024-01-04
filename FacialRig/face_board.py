@@ -111,12 +111,12 @@ def lock_n_hide(node, avoid):
 
 
 class FaceBoard:
-    def __init__(self, global_scale=1.0):
-        self.suffix = "ctrl"
+    def __init__(self, head_joint=None, global_scale=1.0):
+        self.suffix = "ctr"
         self.base_board = "FaceBoard"
-        self.root_joint = "Root_Jnt_Exp"
-        self.head_joint = "C_Head_DrivenJnt_Exp"
-        self.face_joint = "bn_face_Exp"
+        # self.root_joint = "Root_Jnt_Exp"
+        self.head_joint = head_joint
+        self.face_joint = "Face_jnt"
         
         self.current_scale = global_scale
         self.controls = dict()
