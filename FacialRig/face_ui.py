@@ -1,4 +1,3 @@
-
 from maya.api import OpenMaya, OpenMayaAnim
 from maya import OpenMayaUI, cmds, mel
 
@@ -8,7 +7,6 @@ from .driven_keys import DrivenKeysData, load_driven_keys
 from . import lib
 
 import MayaData
-# import Speedball
 
 import math
 import json
@@ -17,7 +15,6 @@ from pathlib import Path
 from PySide2 import QtWidgets, QtCore, QtGui
 from shiboken2 import wrapInstance
 from functools import partial
-
 
 '''
 Author: Lucas Esposito
@@ -188,30 +185,26 @@ class FaceUI(QtWidgets.QDialog):
             self.corrective_widget.addItem(item)
 
     def button_layout(self):
-        head_layout = QtWidgets.QHBoxLayout()
-        head_label = QtWidgets.QLabel('HEAD JOINT NAME')
-        self.head_field = QtWidgets.QLineEdit('Head_jnt')
-        self.head_field.setMinimumHeight(20)
-        self.head_field.setFont(self.default_font)
-        head_layout.addWidget(head_label)
-        head_layout.addWidget(self.head_field)
+        self.buttons = QtWidgets.QVBoxLayout()
 
-        teeth_layout = QtWidgets.QHBoxLayout()
-        teeth_label = QtWidgets.QLabel('TEETH MESH')
-        self.teeth_field = QtWidgets.QLineEdit('Teeth_Base')
-        self.teeth_field.setMinimumHeight(20)
-        self.teeth_field.setFont(self.default_font)
-        teeth_layout.addWidget(teeth_label)
-        teeth_layout.addWidget(self.teeth_field)
+        fields = [[QtWidgets.QLabel('HEAD JOINT'), QtWidgets.QLineEdit('Head_jnt')],
+                  [QtWidgets.QLabel('RIGHT EYE JOINT'), QtWidgets.QLineEdit('Eye_R_jnt')],
+                  [QtWidgets.QLabel('LEFT EYE JOINT'), QtWidgets.QLineEdit('Eye_L_jnt')],
+                  [QtWidgets.QLabel('JAW JOINT'), QtWidgets.QLineEdit('Jaw_jnt')],
+                  [QtWidgets.QLabel('TEETH MESH'), QtWidgets.QLineEdit('Teeth_Base')],
+                  [QtWidgets.QLabel('NUMBER OF FACE JOINTS'), QtWidgets.QSpinBox()]]
 
-        joints_layout = QtWidgets.QHBoxLayout()
-        joints_label = QtWidgets.QLabel('NUMBER FACE JOINTS')
-        self.n_joints = QtWidgets.QSpinBox()
-        self.n_joints.setMinimumHeight(20)
-        self.n_joints.setFont(self.default_font)
-        self.n_joints.setValue(81)
-        joints_layout.addWidget(joints_label)
-        joints_layout.addWidget(self.n_joints)
+        self.head_field, self.r_eye_field, self.l_eye_field, self.jaw_field, self.teeth_field, self.n_joints = [n[-1] for n in fields]
+
+        for widgets in fields:
+            if isinstance(widgets[-1], QtWidgets.QSpinBox):
+                widgets[-1].setValue(81)
+            base_layout = QtWidgets.QHBoxLayout()
+            widgets[-1].setMinimumHeight(20)
+            widgets[-1].setFont(self.default_font)
+            base_layout.addWidget(widgets[0])
+            base_layout.addWidget(widgets[-1])
+            self.buttons.addLayout(base_layout)
 
         self.blendshapes_button = QtWidgets.QPushButton('CREATE RIG')
         self.blendshapes_button.setMinimumSize(150, 60)
@@ -219,10 +212,6 @@ class FaceUI(QtWidgets.QDialog):
         self.update_button = QtWidgets.QPushButton('UPDATE SELECTED')
         self.update_button.setMinimumSize(150, 60)
 
-        self.buttons = QtWidgets.QVBoxLayout()
-        self.buttons.addLayout(head_layout)
-        self.buttons.addLayout(teeth_layout)
-        self.buttons.addLayout(joints_layout)
         self.buttons.addWidget(self.blendshapes_button)
         self.buttons.addWidget(self.update_button)
 
@@ -340,10 +329,10 @@ class FaceUI(QtWidgets.QDialog):
             return
 
         self.base_head = base_head.partialPathName()
-        self.body_skin = MayaData.data.skin.get(self.base_head)
-        self.body_skeleton = MayaData.data.skeleton.get(list(self.body_skin['influences'].values())[0])
+        self.body_skin = MayaData.skin.get(self.base_head)
+        self.body_skeleton = MayaData.skeleton.get(list(self.body_skin['influences'].values())[0])
         if self.teeth_field.text():
-            self.teeth_skin = MayaData.data.skin.get(self.teeth_field.text())
+            self.teeth_skin = MayaData.skin.get(self.teeth_field.text())
 
         self.edit_mode = False
         self.toggle_mask_mode()
@@ -427,7 +416,8 @@ class FaceUI(QtWidgets.QDialog):
             print('The base head mesh is missing')
             return
 
-        file_paths, selected_filter = QtWidgets.QFileDialog.getOpenFileNames(self.MAYA_DIALOG, 'Import Masks', '', self.FILE_FILTER)
+        file_paths, selected_filter = QtWidgets.QFileDialog.getOpenFileNames(self.MAYA_DIALOG, 'Import Masks', '',
+                                                                             self.FILE_FILTER)
         if not file_paths:
             return
 
@@ -454,7 +444,7 @@ class FaceUI(QtWidgets.QDialog):
             file_path = Path(dir_path) / f'{mask}.json'
             with open(file_path, 'w') as f:
                 f.write(json.dumps(self.masks[mask], indent=4))
-    
+
     def update_values_box(self, value):
         self.values_box.setValue(value / 100.0)
 
@@ -541,8 +531,8 @@ class FaceUI(QtWidgets.QDialog):
             mod.connect(source_shape, target_shape)
         mod.doIt()
 
-        # MayaData.skin.load(Speedball.Head.skin, target_mesh)
-        joints = MayaData.skin.get_skin_joints(target_mesh)
+        MayaData.skin.load(self.body_skin, target_mesh)
+        joints = list(self.body_skin['influences'].values())
 
         cmds.bakeResults([target_plug.name()] + joints, t=(0, self.current_frame), dic=True, pok=True, simulation=True)
 
@@ -558,7 +548,6 @@ class FaceUI(QtWidgets.QDialog):
         lib.set_key(node, attribute, neutral_value, self.current_frame)
 
     def create_controls(self, target_mesh):
-        # TODO: Get skinned body from Base Head
         if not self.face_board:
             if not self.data:
                 print('Couldn\'t find blendshapes')
@@ -574,9 +563,9 @@ class FaceUI(QtWidgets.QDialog):
 
         # Temporarily add suffix to skeleton and copy it
         original_joints = [cmds.rename(jnt, jnt + '_temp') for jnt in self.body_skeleton['joints']]
+        MayaData.skeleton.load(self.body_skeleton)
 
         load_driven_keys(DrivenKeysData.POSES, self.global_scale.factor)
-        return
 
         # Creates animation for each blendshape face control (excluding tongue)
         OpenMaya.MTime.setUIUnit(OpenMaya.MTime.kNTSCFrame)
@@ -587,7 +576,8 @@ class FaceUI(QtWidgets.QDialog):
         OpenMayaAnim.MAnimControl.setMinTime(start_frame)
         OpenMayaAnim.MAnimControl.setCurrentTime(start_frame)
 
-        excluded = ['fidget_ctrl', 'head_ctrl', 'lipSeal_ctrl', 'tongue_ctrl', 'tongue_curl_ctrl', 'tongue_forward_ctrl']
+        excluded = ['fidget_ctr', 'head_ctr', 'lipSeal_ctr', 'tongue_ctr', 'tongue_curl_ctr',
+                    'tongue_forward_ctr']
 
         for ctr, limits in self.face_board.controls.items():
             if ctr in excluded:
@@ -631,7 +621,7 @@ class FaceUI(QtWidgets.QDialog):
 
         # Apply blendshape masks and bake animations to it
         duplicated_mesh = self.data.duplicate_n_apply_masks()
-        # MayaData.skin.load(Speedball.Head.skin, duplicated_mesh)
+        MayaData.skin.load(self.body_skin, duplicated_mesh)
         # TODO: Make sure the eyes and tongue joints are placed correctly
 
         self.transfer_n_bake_animations(duplicated_mesh)

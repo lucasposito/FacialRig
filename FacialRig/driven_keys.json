@@ -330,52 +330,6 @@
             "1": {
                 "core_blendshapes.mouth_up": 1.0
             }
-        },
-        "jaw_ctr.ty": {
-            "1": {
-                "bn_jaw_Exp.ty": -2.0,
-                "bn_jaw_Exp.rx": 10.0
-            }
-        },
-        "jaw_ctr.tx": {
-            "-1": {
-                "bn_jaw_Exp.rz": -20.0
-            },
-            "1": {
-                "bn_jaw_Exp.rz": 20.0
-            }
-        },
-        "l_eye_ctr.tx": {
-            "-1": {
-                "bn_L_eye_Exp.ry": -34.0
-            },
-            "1": {
-                "bn_L_eye_Exp.ry": 37.0
-            }
-        },
-        "l_eye_ctr.ty": {
-            "-1": {
-                "bn_L_eye_Exp.rx": 22.0
-            },
-            "1": {
-                "bn_L_eye_Exp.rx": -12.0
-            }
-        },
-        "r_eye_ctr.tx": {
-            "-1": {
-                "bn_R_eye_Exp.ry": -37.0
-            },
-            "1": {
-                "bn_R_eye_Exp.ry": 34.0
-            }
-        },
-        "r_eye_ctr.ty": {
-            "-1": {
-                "bn_R_eye_Exp.rx": 22.0
-            },
-            "1": {
-                "bn_R_eye_Exp.rx": -12.0
-            }
         }
     }
 }

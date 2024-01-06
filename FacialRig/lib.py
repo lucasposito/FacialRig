@@ -57,7 +57,6 @@ def set_key(node, attribute, value=None, frame=None):
             value = math.radians(value)
         plug.setDouble(value)
     value = plug.asDouble()
-
     anim_obj = plug.source().node()
     anim_mfn = OpenMayaAnim.MFnAnimCurve()
 
@@ -101,7 +100,6 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
 
     mfn_skin = OpenMaya.MSelectionList().add(result_skin['name']).getDependNode(0)
     mfn_skin = OpenMayaAnim.MFnSkinCluster(mfn_skin)
-            
 
     jnt = OpenMaya.MSelectionList().add(mask_jnt).getDagPath(0)
     jnt_id = mfn_skin.indexForInfluenceObject(jnt)
@@ -116,7 +114,6 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
         output_skin['influences'][total_jnts] = name
         old_map[index] = total_jnts
         total_jnts += 1
-
 
     for base_inf, result_inf in zip(base_skin['weights'].items(), result_skin['weights'].values()):
         vtx_id, base_inf = base_inf
