@@ -1,51 +1,5 @@
 {
-    "jaw_ctrl.ty": {
-        "1": {
-            "bn_jaw_Exp.ty": -2.0,
-            "bn_jaw_Exp.rx": 10.0
-        }
-    },
-    "jaw_ctrl.tx": {
-        "-1": {
-            "bn_jaw_Exp.rz": -20.0
-        },
-        "1": {
-            "bn_jaw_Exp.rz": 20.0
-        }
-    },
-    "l_eye_ctrl.tx": {
-        "-1": {
-            "bn_L_eye_Exp.ry": -34.0
-        },
-        "1": {
-            "bn_L_eye_Exp.ry": 37.0
-        }
-    },
-    "l_eye_ctrl.ty": {
-        "-1": {
-            "bn_L_eye_Exp.rx": 22.0
-        },
-        "1": {
-            "bn_L_eye_Exp.rx": -12.0
-        }
-    },
-    "r_eye_ctrl.tx": {
-        "-1": {
-            "bn_R_eye_Exp.ry": -37.0
-        },
-        "1": {
-            "bn_R_eye_Exp.ry": 34.0
-        }
-    },
-    "r_eye_ctrl.ty": {
-        "-1": {
-            "bn_R_eye_Exp.rx": 22.0
-        },
-        "1": {
-            "bn_R_eye_Exp.rx": -12.0
-        }
-    },
-    "tongue_ctrl.tx": {
+    "tongue_ctr.tx": {
         "-1": {
             "bn_tongue_base_Exp.ry": -10.0,
             "bn_tongue_mid_Exp.ry": -40.0,
@@ -57,7 +11,7 @@
             "bn_tongue_tip_Exp.ry": 40.0
         }
     },
-    "tongue_ctrl.ty": {
+    "tongue_ctr.ty": {
         "-1": {
             "bn_tongue_base_Exp.rx": -5.0,
             "bn_tongue_mid_Exp.rx": -36.0,
@@ -69,7 +23,7 @@
             "bn_tongue_tip_Exp.rx": 10.0
         }
     },
-    "tongue_curl_ctrl.tx": {
+    "tongue_curl_ctr.tx": {
         "-1": {
             "bn_tongue_base_Exp.rz": -36.0,
             "bn_tongue_mid_Exp.rz": -36.0,
@@ -81,7 +35,7 @@
             "bn_tongue_tip_Exp.rz": 36.0
         }
     },
-    "tongue_forward_ctrl.tx": {
+    "tongue_forward_ctr.tx": {
         "1": {
             "bn_tongue_base_Exp.ty": 0.9,
             "bn_tongue_mid_Exp.ty": 0.6,

@@ -3,9 +3,28 @@ from maya import cmds
 
 import math
 import copy
-from pathlib import Path
 
 import MayaData
+import dem_bones
+
+
+def create_facial_joints():
+    playblast_options = {
+        "format": "image",
+        "compression": "jpg",
+        "quality": 100,
+        "width": 1920,
+        "height": 1080,
+        "forceOverwrite": True,
+        "viewer": False,
+        "framePadding": 4,
+        "startTime": 1,
+        "endTime": 1,
+        "filename": "playblast_output"
+    }
+
+    # Perform playblast
+    playblast_path = cmds.playblast(**playblast_options)
 
 
 def delete_all_keys(node):
@@ -93,6 +112,7 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
         MayaData.skin.SkinData: mesh weights of mesh A (minus its given mask joint)
         and mesh B merged together
     """
+    # TODO: Refactor it to work with the new skin data format using pandas
     base_skin = MayaData.skin.get(base_mesh)
     result_skin = MayaData.skin.get(result_mesh)
     output_skin = {'weights': dict(), 'influences': copy.deepcopy(base_skin['influences'])}
@@ -141,55 +161,35 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
     return output_skin
 
 
-def run_dembones(mesh, total_frame, n_bones=81):
-    """Runs a hda (Houdini) file that runs a dembones wrapped node.
-    The given mesh needs to contain skinned joints, blendshapes and keyed animation
+def run_dembones(blendshape_mesh, skinned_mesh, total_frame):
+    OpenMaya.MGlobal.displayInfo('Starting Dembones')
+    dembones = dem_bones.DemBones()
+    dembones.compute(skinned_mesh, blendshape_mesh, start_frame=1, end_frame=total_frame)
 
-    Args:
-        mesh (str): Mesh with blendshapes
-        total_frame (int): Duration of the current Range of Motion animation
-        n_bones (int, optional): number of bones to skin the output mesh to
+    for frame in range(dembones.start_frame, dembones.end_frame + 1):
+        for influence in dembones.influences:
+            matrix = OpenMaya.MMatrix(dembones.anim_matrix(influence, frame))
+            matrix = OpenMaya.MTransformationMatrix(matrix)
+            translate = matrix.translation(OpenMaya.MSpace.kWorld)
+            rotate = matrix.rotation().asVector()
 
-    Returns:
-        MayaData.skin.SkinData: mesh weights of the output mesh and the animated joints generated in the scene
-    """
+            set_key(influence, 'tx', translate.x, frame)
+            set_key(influence, 'ty', translate.y, frame)
+            set_key(influence, 'tz', translate.z, frame)
+            set_key(influence, 'rx', math.degrees(rotate.x), frame)
+            set_key(influence, 'ry', math.degrees(rotate.y), frame)
+            set_key(influence, 'rz', math.degrees(rotate.z), frame)
 
-    cmds.loadPlugin('houdiniEngine', qt=True)
-    file_path = str(Path(__file__).parent / 'RIG.SSDR.1.0.hda')
-    houdini_node = cmds.houdiniAsset(loadAsset=[file_path, 'RIG::Object/SSDR::1.0'])
+    skin_cluster_fn = OpenMayaAnim.MFnSkinCluster(MayaData.skin.get_skin_cluster(skinned_mesh))
 
-    # save mesh fbx
-    input_path = Path.home() / 'input_mesh_temp.fbx'
-    output_path = Path.home() / 'output_mesh_temp.fbx'
+    mesh_dag = OpenMaya.MSelectionList().add(skinned_mesh).getDagPath(0)
+    mesh_dag.extendToShape()
 
-    cmds.select([mesh] + MayaData.skin.get_skin_joints(mesh), r=True)
-    cmds.file(str(input_path), exportSelected=True, type='FBX Export', force=True)
-    if 'FbxWarningWindow' in cmds.lsUI(wnd=True):
-        cmds.deleteUI('FbxWarningWindow')
-        cmds.refresh()
+    skin_cluster_fn.setWeights(
+        mesh_dag,
+        OpenMaya.MObject(),
+        OpenMaya.MIntArray(range(len(dembones.influences))),
+        OpenMaya.MDoubleArray(dembones.weights)
+    )
+    OpenMaya.MGlobal.displayInfo('Dembones Finished')
 
-    # Execute SSDR
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_inputFbx', str(input_path).replace("\\", "/"), typ='string')
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_sOutputFile', str(output_path).replace("\\", "/"), typ='string')
-    
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_f__tuple0', 0)
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_f__tuple1', total_frame)
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_nBones', n_bones)
-
-    cmds.setAttr(f'{houdini_node}.houdiniAssetParm_reload__button', 1)
-
-    for i in range(2):
-        cmds.refresh()
-        cmds.setAttr(f'{houdini_node}.houdiniAssetParm_execute__button', 1)
-        cmds.dgeval(f"{houdini_node}.output")
-
-    cmds.file(str(output_path), i=True, type="FBX", ignoreVersion=True, ra=True)
-
-    output_mesh = 'groupdelete1'
-    if not cmds.objExists(output_mesh):
-        return
-    
-    skin = MayaData.skin.get(output_mesh)
-
-    cmds.delete([output_mesh, houdini_node])
-    return skin

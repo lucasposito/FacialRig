@@ -330,6 +330,52 @@
             "1": {
                 "core_blendshapes.mouth_up": 1.0
             }
+        },
+        "jaw_ctr.ty": {
+            "1": {
+                "Jaw_jnt.ty": -2.0,
+                "Jaw_jnt.rx": 10.0
+            }
+        },
+        "jaw_ctr.tx": {
+            "-1": {
+                "Jaw_jnt.rz": -20.0
+            },
+            "1": {
+                "Jaw_jnt.rz": 20.0
+            }
+        },
+        "l_eye_ctr.tx": {
+            "-1": {
+                "Eye_L_jnt.ry": -34.0
+            },
+            "1": {
+                "Eye_L_jnt.ry": 37.0
+            }
+        },
+        "l_eye_ctr.ty": {
+            "-1": {
+                "Eye_L_jnt.rx": 22.0
+            },
+            "1": {
+                "Eye_L_jnt.rx": -12.0
+            }
+        },
+        "r_eye_ctr.tx": {
+            "-1": {
+                "Eye_R_jnt.ry": -37.0
+            },
+            "1": {
+                "Eye_R_jnt.ry": 34.0
+            }
+        },
+        "r_eye_ctr.ty": {
+            "-1": {
+                "Eye_R_jnt.rx": 22.0
+            },
+            "1": {
+                "Eye_R_jnt.rx": -12.0
+            }
         }
     }
 }

@@ -143,13 +143,6 @@ class BlendShape:
             plug.elementByLogicalIndex(int(vtx)).setDouble(float(value))
 
     def set_combination_shape(self, name, shape_index, driver_targets):
-        first_target, sec_target = driver_targets
-
-        # TODO: edit corrective shapes before assigning the blendshape
-
-        cmds.blendShape(self.blend_node, edit=True, t=[self.main_mesh.name(), shape_index, name, 1.0])
-        cmds.combinationShape(bs=self.blend_node, cti=shape_index, cm=0, dti=[first_target, sec_target])
-
         blend_node = OpenMaya.MSelectionList().add(self.blend_node).getDependNode(0)
         blend_node = OpenMaya.MFnDependencyNode(blend_node)
 
@@ -157,29 +150,30 @@ class BlendShape:
         shape_plug = blend_plug.elementByLogicalIndex(shape_index)
 
         if shape_plug.isDestination:
-            first_target = blend_plug.elementByLogicalIndex(first_target)
-            sec_target = blend_plug.elementByLogicalIndex(sec_target)
-            self.correctives[name] = [first_target.partialName(useAlias=True), sec_target.partialName(useAlias=True)]
+            return
 
-            comb_node = shape_plug.source().node()
-            OpenMaya.MDGModifier().renameNode(comb_node, f'{name}_comb').doIt()
+        first_target, sec_target = driver_targets
 
-    def edit_corrective_shape(self, index, targets):
-        if not isinstance(targets, list):
-            targets = [targets]
+        first_target_plug = blend_plug.elementByLogicalIndex(first_target)
+        sec_target_plug = blend_plug.elementByLogicalIndex(sec_target)
 
-        for target in targets:
-            corrective_mesh = BlendShapeData.CORRECTIVES[index]
-            target_mesh = BlendShapeData.SHAPES[target]
-            print(corrective_mesh)
-            print(target_mesh)
-            self.subtract_offset(corrective_mesh, self.get_vertices_offset(self.main_mesh.name(), target_mesh))
-        print('-----------')
+        for target in [first_target_plug, sec_target_plug]:
+            self.subtract_offset(name, self.get_vertices_offset(self.main_mesh.name(), target.partialName(useAlias=True)))
+
+        cmds.blendShape(self.blend_node, edit=True, t=[self.main_mesh.name(), shape_index, name, 1.0])
+        cmds.combinationShape(bs=self.blend_node, cti=shape_index, cm=0, dti=[first_target, sec_target])
+
+        self.correctives[name] = [first_target_plug.partialName(useAlias=True), sec_target_plug.partialName(useAlias=True)]
+
+        comb_node = shape_plug.source().node()
+        OpenMaya.MDGModifier().renameNode(comb_node, f'{name}_comb').doIt()
 
     def create(self):
         # If the mesh shape is locked, it won't work
         if not self.blend_node:
             self.blend_node = cmds.blendShape(self.main_mesh.name(), n=BlendShapeData.NAME)[0]
+
+        temp_shapes = list()
 
         for index, shape in BlendShapeData.BLENDSHAPES.items():
             index = int(index)
@@ -196,17 +190,26 @@ class BlendShape:
             if flip:
                 self.flip_symmetry(target_mesh, self.current_scale)
 
-            if sec_target:
-                self.set_combination_shape(shape_name, index, [first_target, sec_target])
-            else:
+            if not sec_target:
                 cmds.blendShape(self.blend_node, edit=True, t=[self.main_mesh.name(), index, target_mesh, 1.0])
+
+                if target_mesh in temp_shapes:
+                    cmds.delete(target_mesh)
+                else:
+                    temp_shapes.append(target_mesh)
+                cmds.rename(base_shape, base_name)
+
+                self.set_mask(BlendShapeData.MASKS[mask], index)
+                continue
+
+            self.set_combination_shape(shape_name, index, [first_target, sec_target])
 
             cmds.delete(target_mesh)
             cmds.rename(base_shape, base_name)
 
             self.set_mask(BlendShapeData.MASKS[mask], index)
 
-            # TODO: set the shape in edit mode when adding combination shape
+        cmds.delete(temp_shapes)
 
     def duplicate_n_apply_masks(self):
         blend_node = OpenMaya.MSelectionList().add(self.blend_node).getDependNode(0)

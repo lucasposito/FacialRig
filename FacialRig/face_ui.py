@@ -66,14 +66,17 @@ class FaceUI(QtWidgets.QDialog):
         self.data = None
         self.face_board = None
         self.base_head = None
-        self.body_skin = None
-        self.body_skeleton = None
+        self.head_skeleton = None
+        self.head_skin = None
         self.teeth_skin = None
         self.masks = dict()
 
         self.global_scale = None
 
+        self._rom_cache = list()
+
         self.anim_data = dict()
+        self.comb_data = dict()
         self.face_driven_keys = dict()
         self.current_frame = 1
         self.edit_mode = False
@@ -188,13 +191,14 @@ class FaceUI(QtWidgets.QDialog):
         self.buttons = QtWidgets.QVBoxLayout()
 
         fields = [[QtWidgets.QLabel('HEAD JOINT'), QtWidgets.QLineEdit('Head_jnt')],
+                  [QtWidgets.QLabel('FACE JOINT'), QtWidgets.QLineEdit('Face_jnt')],
                   [QtWidgets.QLabel('RIGHT EYE JOINT'), QtWidgets.QLineEdit('Eye_R_jnt')],
                   [QtWidgets.QLabel('LEFT EYE JOINT'), QtWidgets.QLineEdit('Eye_L_jnt')],
                   [QtWidgets.QLabel('JAW JOINT'), QtWidgets.QLineEdit('Jaw_jnt')],
                   [QtWidgets.QLabel('TEETH MESH'), QtWidgets.QLineEdit('Teeth_Base')],
                   [QtWidgets.QLabel('NUMBER OF FACE JOINTS'), QtWidgets.QSpinBox()]]
 
-        self.head_field, self.r_eye_field, self.l_eye_field, self.jaw_field, self.teeth_field, self.n_joints = [n[-1] for n in fields]
+        self.head_field, self.face_field, self.r_eye_field, self.l_eye_field, self.jaw_field, self.teeth_field, self.n_joints = [n[-1] for n in fields]
 
         for widgets in fields:
             if isinstance(widgets[-1], QtWidgets.QSpinBox):
@@ -206,14 +210,14 @@ class FaceUI(QtWidgets.QDialog):
             base_layout.addWidget(widgets[-1])
             self.buttons.addLayout(base_layout)
 
-        self.blendshapes_button = QtWidgets.QPushButton('CREATE RIG')
-        self.blendshapes_button.setMinimumSize(150, 60)
+        self.rig_button = QtWidgets.QPushButton('CREATE RIG')
+        self.rig_button.setMinimumSize(150, 60)
 
-        self.update_button = QtWidgets.QPushButton('UPDATE SELECTED')
-        self.update_button.setMinimumSize(150, 60)
+        self.rom_button = QtWidgets.QPushButton('CREATE ROM')
+        self.rom_button.setMinimumSize(150, 60)
 
-        self.buttons.addWidget(self.blendshapes_button)
-        self.buttons.addWidget(self.update_button)
+        self.buttons.addWidget(self.rig_button)
+        self.buttons.addWidget(self.rom_button)
 
     def main_layout(self):
         main_layout = QtWidgets.QHBoxLayout(self)
@@ -224,7 +228,9 @@ class FaceUI(QtWidgets.QDialog):
         main_layout.addLayout(self.buttons)
 
     def create_connections(self):
-        self.blendshapes_button.clicked.connect(self.create_blendshapes)
+        self.rig_button.clicked.connect(self.generate_rig)
+        self.rom_button.clicked.connect(self.generate_rom)
+
         self.load_mesh_button.clicked.connect(self.set_base_head)
         self.edit_mask_button.clicked.connect(self.toggle_mask_mode)
         self.flood_button.clicked.connect(self.set_vtx_value)
@@ -293,6 +299,14 @@ class FaceUI(QtWidgets.QDialog):
             t = (value - 0.8) / 0.2
             return 1.0, FaceUI.lerp(0.5, 0.0, t), 0.0
 
+    def generate_rom(self):
+        self.create_blendshapes()
+        self.create_controls(True)
+
+    def generate_rig(self):
+        self.create_blendshapes()
+        self.create_controls()
+
     def toggle_mask_mode(self):
         if not self.base_head:
             return
@@ -329,8 +343,8 @@ class FaceUI(QtWidgets.QDialog):
             return
 
         self.base_head = base_head.partialPathName()
-        self.body_skin = MayaData.skin.get(self.base_head)
-        self.body_skeleton = MayaData.skeleton.get(list(self.body_skin['influences'].values())[0])
+        self.head_skin = MayaData.skin.get(self.base_head)
+        self.head_skeleton = MayaData.skeleton.get(list(self.head_skin.keys())[0])
         if self.teeth_field.text():
             self.teeth_skin = MayaData.skin.get(self.teeth_field.text())
 
@@ -453,24 +467,10 @@ class FaceUI(QtWidgets.QDialog):
 
     def create_blendshapes(self):
         self.global_scale = SceneScale()
-        active_list = OpenMaya.MGlobal.getActiveSelectionList()
+        # active_list = OpenMaya.MGlobal.getActiveSelectionList()
 
         if not self.base_head:
             print('The base head mesh is missing')
-            return
-
-        if active_list.isEmpty():
-            print('Please select the target head mesh')
-            return
-        target_mesh = active_list.getDagPath(0)
-
-        if not OpenMaya.MFnDagNode(target_mesh).typeName == 'transform':
-            print('Please select a mesh type object')
-            return
-        try:
-            target_mesh.extendToShape().hasFn(OpenMaya.MFn.kMesh)
-        except RuntimeError:
-            print('Please select a mesh type object')
             return
 
         # Check if all masks have data
@@ -511,30 +511,76 @@ class FaceUI(QtWidgets.QDialog):
 
         self.data = BlendShape(self.base_head, self.masks, self.global_scale.factor)
         self.data.create()
-        self.create_controls(target_mesh)
 
-    def transfer_n_bake_animations(self, target_mesh):
-        source_node = OpenMaya.MSelectionList().add(self.data.blend_node).getDependNode(0)
-        source_node = OpenMaya.MFnDependencyNode(source_node)
+    def create_curve_attributes(self):
 
-        target_node = OpenMaya.MSelectionList().add(get_blendshape(target_mesh))
-        target_node = OpenMaya.MFnDependencyNode(target_node.getDependNode(0))
+        direction_map = {'tx': {'positive': 'east', 'negative': 'west'},
+                         'ty': {'positive': 'north', 'negative': 'south'}}
 
-        source_plug = source_node.findPlug('weight', False)
-        target_plug = target_node.findPlug('weight', False)
+        data = dict()
 
-        mod = OpenMaya.MDGModifier()
-        for i in range(source_plug.numElements()):
-            source_shape = source_plug.elementByPhysicalIndex(i)
-            target_shape = target_plug.elementByPhysicalIndex(i)
+        for frame in range(self.current_frame + 1):
+            if frame not in self.anim_data:
+                continue
 
-            mod.connect(source_shape, target_shape)
-        mod.doIt()
+            driver_data = self.anim_data[frame]
+            ctr_name = driver_data['node']
+            attr = driver_data['attribute']
 
-        MayaData.skin.load(self.body_skin, target_mesh)
-        joints = list(self.body_skin['influences'].values())
+            value = driver_data['value']
 
-        cmds.bakeResults([target_plug.name()] + joints, t=(0, self.current_frame), dic=True, pok=True, simulation=True)
+            direction = 'positive' if value > 0.0 else 'negative'
+            name = f"{ctr_name}_{direction_map[attr][direction]}"
+            cmds.addAttr(self.face_field.text(), longName=name, attributeType='float', minValue=0.0, maxValue=1.0, k=True)
+
+            driven = f"{self.face_field.text()}.{name}"
+            data.setdefault(f'{ctr_name}.{attr}', {}).setdefault(value, {})[driven] = 1.0
+
+        return data
+
+    def create_comb_data(self):
+
+        for frame, data in self.comb_data.items():
+            cmds.addAttr(self.face_field.text(), ln=data['attribute'], at='float', dv=0.0, k=True)
+            attr_plug = OpenMaya.MSelectionList().add(self.face_field.text()).getDependNode(0)
+            attr_plug = OpenMaya.MFnTransform(attr_plug).findPlug(data['attribute'], False)
+
+            mod = OpenMaya.MDGModifier()
+            clamp_output = list()
+            for each in data['nodes']:
+                ctr, limit = each
+                ctr_name, ctr_attr = ctr.split('.')
+
+                ctr_node = OpenMaya.MSelectionList().add(ctr_name).getDependNode(0)
+                ctr_plug = OpenMaya.MFnTransform(ctr_node).findPlug(ctr_attr, False)
+
+                clamp_node = mod.createNode('clamp')
+                clamp_mfn = OpenMaya.MFnDependencyNode(clamp_node)
+                if limit < 0:
+                    min_plug = clamp_mfn.findPlug('minR', False)
+                    min_plug.setFloat(limit)
+                else:
+                    max_plug = clamp_mfn.findPlug('maxR', False)
+                    max_plug.setFloat(limit)
+
+                input_plug = clamp_mfn.findPlug('inputR', False)
+                clamp_output.append(clamp_mfn.findPlug('outputR', False))
+
+                mod.connect(ctr_plug, input_plug)
+
+            multiply_node = mod.createNode('multiplyDivide')
+            multiply_mfn = OpenMaya.MFnDependencyNode(multiply_node)
+            plug_a = multiply_mfn.findPlug('input1X', False)
+            plug_b = multiply_mfn.findPlug('input2X', False)
+            multiply_output = multiply_mfn.findPlug('outputX', False)
+
+            self._rom_cache.append(multiply_node)
+
+            clamp_a, clamp_b = clamp_output
+            mod.connect(clamp_a, plug_a)
+            mod.connect(clamp_b, plug_b)
+            mod.connect(multiply_output, attr_plug)
+            mod.doIt()
 
     def key_control(self, node, attribute, neutral_value, target_value):
 
@@ -547,26 +593,10 @@ class FaceUI(QtWidgets.QDialog):
 
         lib.set_key(node, attribute, neutral_value, self.current_frame)
 
-    def create_controls(self, target_mesh):
-        if not self.face_board:
-            if not self.data:
-                print('Couldn\'t find blendshapes')
-                return
-
-            self.face_board = FaceBoard(self.head_field.text(), self.global_scale.factor)
-
-        if not self.base_head:
-            print('A base blendshape head needs to be generated before applying it')
-            return
-
-        self.face_board.create_controls()
-
-        # Temporarily add suffix to skeleton and copy it
-        original_joints = [cmds.rename(jnt, jnt + '_temp') for jnt in self.body_skeleton['joints']]
-        MayaData.skeleton.load(self.body_skeleton)
-
-        load_driven_keys(DrivenKeysData.POSES, self.global_scale.factor)
-
+    def create_rom(self):
+        self.current_frame = 1
+        self.anim_data = dict()
+        self.comb_data = dict()
         # Creates animation for each blendshape face control (excluding tongue)
         OpenMaya.MTime.setUIUnit(OpenMaya.MTime.kNTSCFrame)
 
@@ -603,8 +633,8 @@ class FaceUI(QtWidgets.QDialog):
                 else:
                     self.key_control(ctr, 'ty', limits['tyLimits'][0], limits['tyLimits'][1])
 
-        for cor in self.data.correctives.values():
-            first, second = [DrivenKeysData.SHAPES[each] for each in cor]
+        for cor_name, cor_shapes in self.data.correctives.items():
+            first, second = [DrivenKeysData.SHAPES[each] for each in cor_shapes]
             first_ctr, first_attr = first[0].split('.')
             second_ctr, second_attr = second[0].split('.')
 
@@ -612,6 +642,8 @@ class FaceUI(QtWidgets.QDialog):
             lib.set_key(second_ctr, second_attr, 0, self.current_frame)
 
             self.current_frame += 1
+            self.comb_data[self.current_frame] = {'nodes': [first, second], 'attribute': cor_name}
+
             lib.set_key(first_ctr, first_attr, first[-1], self.current_frame)
             lib.set_key(second_ctr, second_attr, second[-1], self.current_frame)
 
@@ -619,34 +651,84 @@ class FaceUI(QtWidgets.QDialog):
             lib.set_key(first_ctr, first_attr, 0, self.current_frame)
             lib.set_key(second_ctr, second_attr, 0, self.current_frame)
 
-        # Apply blendshape masks and bake animations to it
-        duplicated_mesh = self.data.duplicate_n_apply_masks()
-        MayaData.skin.load(self.body_skin, duplicated_mesh)
-        # TODO: Make sure the eyes and tongue joints are placed correctly
+    def clean_rom(self):
+        cmds.delete([OpenMaya.MFnDependencyNode(i).name() for i in self._rom_cache])
 
-        self.transfer_n_bake_animations(duplicated_mesh)
+        last_frame = max(self.anim_data.keys())
+        last_shape = self.anim_data[last_frame]
+        lib.set_key(last_shape['node'], last_shape['attribute'], 0, last_frame + 1)
 
-        # Load the mesh in the Houdini plugin and get the output
-        output_skin = lib.run_dembones(duplicated_mesh, self.current_frame)
-        output_jnt = 'joint0'
+        for frame, data in self.comb_data.items():
+            first, second = data['nodes']
+            first, _ = first
+            second, _ = second
 
-        # Delete temporarily created suffix and skeleton
-        cmds.delete(self.face_board.root_joint)
-        for jnt in original_joints:
-            cmds.rename(jnt, '_'.join(jnt.split('_')[:-1]))
+            first_ctr, first_attr = first.split('.')
+            lib.set_key(first_ctr, first_attr, 0, frame)
 
-        if not cmds.objExists(output_jnt):
-            print("No output joint was found")
+            sec_ctr, sec_attr = second.split('.')
+            lib.set_key(sec_ctr, sec_attr, 0, frame)
+
+            lib.set_key(self.face_field.text(), data['attribute'], 0, frame - 1)
+            lib.set_key(self.face_field.text(), data['attribute'], 1, frame)
+            lib.set_key(self.face_field.text(), data['attribute'], 0, frame + 1)
+
+        for ctr in self.face_board.controls.keys():
+            [cmds.keyTangent(f'{ctr}.{attr}', edit=True, itt='linear', ott='linear') for attr in ['tx', 'ty']]
+
+        cmds.bakeResults(self.face_field.text(), hi='below', t=(0, self.current_frame), sm=True, pok=True)
+        for i in cmds.listRelatives(self.face_field.text(), ad=1) + [self.face_field.text()]:
+            cmds.delete(i, sc=True)
+        cmds.delete(self.face_board.base_board)
+
+    def create_controls(self, keep_rom=False):
+        if self.face_board:
             return
 
-        facial_joints = cmds.listRelatives(output_jnt, ad=True)
+        if not self.data:
+            print('Couldn\'t find blendshapes')
+            return
+
+        if not self.base_head:
+            print('A base blendshape head needs to be generated before applying it')
+            return
+
+        joints_list = OpenMaya.MSelectionList().add(self.jaw_field.text())
+
+        jaw_joint = OpenMaya.MFnTransform(joints_list.getDependNode(0))
+        jaw_joints = [jaw_joint.child(index) for index in range(jaw_joint.childCount())]
+
+        joints_list.add(self.face_field.text())
+        face_joint = OpenMaya.MFnTransform(joints_list.getDependNode(1))
+        facial_joints = [face_joint.child(index) for index in range(face_joint.childCount()) if face_joint.child(index) not in jaw_joints]
+
+        # TODO: Find a way to load facial joints - Mediapipe?
+        face_mesh = 'Face_Base'  # TODO: temporarily hard coded
+
+        if self.teeth_skin:
+            print('loading teeth skin')
+
+        self.face_board = FaceBoard(self.head_field.text(), self.global_scale.factor)
+
+        self.face_board.create_controls()
+
+        load_driven_keys(DrivenKeysData.POSES, self.global_scale.factor)
+        self.create_rom()
+
+        # TODO: Work on editing the drivenkeys manually
+        lib.run_dembones(self.base_head, face_mesh, self.current_frame)
+
+        joints_anim_data = dict()
+        curves_anim_data = self.create_curve_attributes()
+
+        self.create_comb_data()
 
         # Check what joints are being changed when a specific control is changed
         mod = OpenMaya.MDagModifier()
         for jnt in facial_joints:
-            jnt_obj = OpenMaya.MSelectionList().add(jnt).getDependNode(0)
+            jnt_mfn = OpenMaya.MFnTransform(jnt)
             for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz']:
-                attr_plug = OpenMaya.MFnTransform(jnt_obj).findPlug(attr, False)
+                attr_plug = jnt_mfn.findPlug(attr, False)
                 anim_mfn = OpenMayaAnim.MFnAnimCurve()
 
                 if not anim_mfn.hasObj(attr_plug.source().node()):
@@ -665,48 +747,62 @@ class FaceUI(QtWidgets.QDialog):
                     pose_value = anim_mfn.value(index)
                     if attr in ['rx', 'ry', 'rz']:
                         pose_value = math.degrees(pose_value)
+                    driven = f"{jnt_mfn.partialPathName()}.{attr}"
 
                     difference = round(pose_value - neutral_value, 5)
                     if -1e-3 <= difference <= 1e-3:
                         continue
-                    if frame not in self.anim_data:
+                    if frame in self.anim_data:
+                        driver_data = self.anim_data[frame]
+                        driver = f"{driver_data['node']}.{driver_data['attribute']}"
+                        value = driver_data['value']
+                    elif frame in self.comb_data:
+                        comb_attr = self.comb_data[frame]['attribute']
+
+                        for i in self.comb_data[frame]['nodes']:
+                            ctr, val = i
+                            if ctr in joints_anim_data and \
+                                    val in joints_anim_data[ctr] and \
+                                    driven in joints_anim_data[ctr][val]:
+                                difference -= joints_anim_data[ctr][val][driven]
+
+                        driver = f"{self.face_field.text()}.{comb_attr}"
+                        value = 1
+                    else:
                         continue
 
-                    driver_data = self.anim_data[frame]
+                    if driver not in joints_anim_data:
+                        joints_anim_data[driver] = dict()
+                    if value not in joints_anim_data[driver]:
+                        joints_anim_data[driver][value] = dict()
 
-                    driver = f"{driver_data['node']}.{driver_data['attribute']}"
-                    driven = f"{jnt}.{attr}"
-
-                    if driver not in self.face_driven_keys:
-                        self.face_driven_keys[driver] = dict()
-                    if driver_data['value'] not in self.face_driven_keys[driver]:
-                        self.face_driven_keys[driver][driver_data['value']] = dict()
-
-                    self.face_driven_keys[driver][driver_data['value']].update({driven: difference})
+                    joints_anim_data[driver][value].update({driven: difference})
 
                 mod.deleteNode(attr_plug.source().node())
         mod.doIt()
 
-        cmds.parent(facial_joints, self.face_board.face_joint)
-        for ctr in self.face_board.controls.keys():
-            lib.delete_all_keys(ctr)
+        for attr_key in set(joints_anim_data.keys()).union(curves_anim_data.keys()):
+            self.face_driven_keys[attr_key] = dict()
+            for inner_key in set(joints_anim_data.get(attr_key, {}).keys()).union(
+                    curves_anim_data.get(attr_key, {}).keys()):
+                joint_data = joints_anim_data.get(attr_key, {}).get(inner_key, {})
+                curve_data = curves_anim_data.get(attr_key, {}).get(inner_key, {})
+                self.face_driven_keys[attr_key][inner_key] = {**joint_data, **curve_data}
 
         load_driven_keys(self.face_driven_keys, self.global_scale.factor)
         load_driven_keys(DrivenKeysData.JOINTS, self.global_scale.factor)
 
-        MayaData.skin.load(output_skin, duplicated_mesh)
+        if keep_rom:
+            self.clean_rom()
+            return
+
+        for ctr in list(self.face_board.controls.keys()) + [self.face_field.text()]:
+            lib.delete_all_keys(ctr)
 
         # Merge the first mesh with the output one onto a copied mesh
-        merged_skin = lib.merge_skin(self.base_head, duplicated_mesh, output_jnt)
-        MayaData.skin.load(merged_skin, duplicated_mesh)
+        # merged_skin = lib.merge_skin(self.base_head, face_mesh, self.head_field.text())
+        # MayaData.skin.load(merged_skin, face_mesh)
 
-        # copy skin weights onto final mesh
-        MayaData.skin.copy_skin(duplicated_mesh, target_mesh)
-
-        [cmds.rename(jnt, f'face_{n}_Exp') for n, jnt in enumerate(facial_joints, 1)]
-
-        cmds.setAttr(f'{self.base_head}.visibility', False)
-        cmds.delete(duplicated_mesh, output_jnt)
         cmds.select(cl=True)
 
         for i in range(10):
