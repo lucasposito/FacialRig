@@ -1,48 +1,48 @@
 {
     "tongue_ctr.tx": {
         "-1": {
-            "bn_tongue_base_Exp.ry": -10.0,
-            "bn_tongue_mid_Exp.ry": -40.0,
-            "bn_tongue_tip_Exp.ry": -40.0
+            "Tongue1_jnt.ry": -10.0,
+            "Tongue2_jnt.ry": -40.0,
+            "Tongue3_jnt.ry": -40.0
         },
         "1": {
-            "bn_tongue_base_Exp.ry": 10.0,
-            "bn_tongue_mid_Exp.ry": 40.0,
-            "bn_tongue_tip_Exp.ry": 40.0
+            "Tongue1_jnt.ry": 10.0,
+            "Tongue2_jnt.ry": 40.0,
+            "Tongue3_jnt.ry": 40.0
         }
     },
     "tongue_ctr.ty": {
         "-1": {
-            "bn_tongue_base_Exp.rx": -5.0,
-            "bn_tongue_mid_Exp.rx": -36.0,
-            "bn_tongue_tip_Exp.rx": -36.0
+            "Tongue1_jnt.rx": -5.0,
+            "Tongue2_jnt.rx": -36.0,
+            "Tongue3_jnt.rx": -36.0
         },
         "1": {
-            "bn_tongue_base_Exp.rx": 5.0,
-            "bn_tongue_mid_Exp.rx": 45.0,
-            "bn_tongue_tip_Exp.rx": 10.0
+            "Tongue1_jnt.rx": 5.0,
+            "Tongue2_jnt.rx": 45.0,
+            "Tongue3_jnt.rx": 10.0
         }
     },
     "tongue_curl_ctr.tx": {
         "-1": {
-            "bn_tongue_base_Exp.rz": -36.0,
-            "bn_tongue_mid_Exp.rz": -36.0,
-            "bn_tongue_tip_Exp.rz": -36.0
+            "Tongue1_jnt.rz": -36.0,
+            "Tongue2_jnt.rz": -36.0,
+            "Tongue3_jnt.rz": -36.0
         },
         "1": {
-            "bn_tongue_base_Exp.rz": 36.0,
-            "bn_tongue_mid_Exp.rz": 36.0,
-            "bn_tongue_tip_Exp.rz": 36.0
+            "Tongue1_jnt.rz": 36.0,
+            "Tongue2_jnt.rz": 36.0,
+            "Tongue3_jnt.rz": 36.0
         }
     },
     "tongue_forward_ctr.tx": {
         "1": {
-            "bn_tongue_base_Exp.ty": 0.9,
-            "bn_tongue_mid_Exp.ty": 0.6,
-            "bn_tongue_tip_Exp.ty": 0.4,
-            "bn_tongue_base_Exp.tz": 2.4,
-            "bn_tongue_mid_Exp.tz": 1.3,
-            "bn_tongue_tip_Exp.tz": 1.4
+            "Tongue1_jnt.ty": 0.9,
+            "Tongue2_jnt.ty": 0.6,
+            "Tongue3_jnt.ty": 0.4,
+            "Tongue1_jnt.tz": 2.4,
+            "Tongue2_jnt.tz": 1.3,
+            "Tongue3_jnt.tz": 1.4
         }
     }
 }

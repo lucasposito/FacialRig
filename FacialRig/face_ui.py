@@ -2,7 +2,7 @@ from maya.api import OpenMaya, OpenMayaAnim
 from maya import OpenMayaUI, cmds, mel
 
 from .face_board import FaceBoard
-from .blendshapes import BlendShape, BlendShapeData, get_blendshape
+from .blendshapes import BlendShape, BlendShapeData
 from .driven_keys import DrivenKeysData, load_driven_keys
 from . import lib
 
