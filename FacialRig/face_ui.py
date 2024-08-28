@@ -10,6 +10,7 @@ import MayaData
 
 import math
 import json
+import numpy
 
 from pathlib import Path
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -423,7 +424,46 @@ class FaceUI(QtWidgets.QDialog):
         mesh_mfn.setVertexColors(color_array, list(map(int, self.masks[mask.text()].keys())))
 
     def mirror_mask(self):
-        pass
+        mesh_mfn = OpenMaya.MSelectionList().add(self.base_head).getDagPath(0)
+        mesh_mfn = OpenMaya.MFnMesh(mesh_mfn)
+
+        mask_items = [self.masks_widget.item(i) for i in range(self.masks_widget.count())]
+
+        temp_node = cmds.createNode('closestPointOnMesh')
+        cmds.connectAttr(f'{self.base_head}.worldMesh', f'{temp_node}.inMesh')
+
+        for mask in BlendShapeData.MASKS:
+            if mask not in self.masks:
+                continue
+
+            side = mask.split('_')
+            if side[0] != 'l':
+                continue
+
+            new_values = dict(zip(range(mesh_mfn.numVertices), numpy.zeros(mesh_mfn.numVertices)))
+
+            target = '_'.join(['r'] + side[1:])
+
+            for vtx, value in self.masks[mask].items():
+                vtx = int(vtx)
+
+                vtx_position = list(mesh_mfn.getPoint(vtx, OpenMaya.MSpace.kWorld))[:-1]
+                if value == 0.0:
+                    continue
+
+                vtx_position[0] *= -1
+
+                cmds.setAttr(f'{temp_node}.inPosition', *vtx_position)
+                closest = cmds.getAttr(f'{temp_node}.closestVertexIndex')
+
+                new_values[closest] = value
+
+            self.masks[target] = new_values
+            mask_widget = [mask for mask in mask_items if target == mask.text()]
+            if not mask_widget:
+                continue
+            self.highlight_item(mask_widget[0])
+        cmds.delete(temp_node)
 
     def import_mask(self):
         if not self.base_head:
