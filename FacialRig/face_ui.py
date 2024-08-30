@@ -753,6 +753,8 @@ class FaceUI(QtWidgets.QDialog):
         self.face_board.create_controls()
 
         load_driven_keys(DrivenKeysData.POSES, self.global_scale.factor)
+
+        # It can happen that rom won't work at all or will give really strange results, delete Maya prefs
         self.create_rom()
 
         # TODO: Work on editing the drivenkeys manually
