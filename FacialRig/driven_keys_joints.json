@@ -1,48 +1,94 @@
 {
-    "tongue_ctr.tx": {
-        "-1": {
-            "Tongue1_jnt.ry": -10.0,
-            "Tongue2_jnt.ry": -40.0,
-            "Tongue3_jnt.ry": -40.0
-        },
-        "1": {
-            "Tongue1_jnt.ry": 10.0,
-            "Tongue2_jnt.ry": 40.0,
-            "Tongue3_jnt.ry": 40.0
-        }
+  "tongue_ctr.tx": {
+    "-1": {
+      "Tongue1_jnt.ry": -10.0,
+      "Tongue2_jnt.ry": -40.0,
+      "Tongue3_jnt.ry": -40.0
     },
-    "tongue_ctr.ty": {
-        "-1": {
-            "Tongue1_jnt.rx": -5.0,
-            "Tongue2_jnt.rx": -36.0,
-            "Tongue3_jnt.rx": -36.0
-        },
-        "1": {
-            "Tongue1_jnt.rx": 5.0,
-            "Tongue2_jnt.rx": 45.0,
-            "Tongue3_jnt.rx": 10.0
-        }
-    },
-    "tongue_curl_ctr.tx": {
-        "-1": {
-            "Tongue1_jnt.rz": -36.0,
-            "Tongue2_jnt.rz": -36.0,
-            "Tongue3_jnt.rz": -36.0
-        },
-        "1": {
-            "Tongue1_jnt.rz": 36.0,
-            "Tongue2_jnt.rz": 36.0,
-            "Tongue3_jnt.rz": 36.0
-        }
-    },
-    "tongue_forward_ctr.tx": {
-        "1": {
-            "Tongue1_jnt.ty": 0.9,
-            "Tongue2_jnt.ty": 0.6,
-            "Tongue3_jnt.ty": 0.4,
-            "Tongue1_jnt.tz": 2.4,
-            "Tongue2_jnt.tz": 1.3,
-            "Tongue3_jnt.tz": 1.4
-        }
+    "1": {
+      "Tongue1_jnt.ry": 10.0,
+      "Tongue2_jnt.ry": 40.0,
+      "Tongue3_jnt.ry": 40.0
     }
+  },
+  "tongue_ctr.ty": {
+    "-1": {
+      "Tongue1_jnt.rx": -5.0,
+      "Tongue2_jnt.rx": -36.0,
+      "Tongue3_jnt.rx": -36.0
+    },
+    "1": {
+      "Tongue1_jnt.rx": 5.0,
+      "Tongue2_jnt.rx": 45.0,
+      "Tongue3_jnt.rx": 10.0
+    }
+  },
+  "tongue_curl_ctr.tx": {
+    "-1": {
+      "Tongue1_jnt.rz": -36.0,
+      "Tongue2_jnt.rz": -36.0,
+      "Tongue3_jnt.rz": -36.0
+    },
+    "1": {
+      "Tongue1_jnt.rz": 36.0,
+      "Tongue2_jnt.rz": 36.0,
+      "Tongue3_jnt.rz": 36.0
+    }
+  },
+  "tongue_forward_ctr.tx": {
+    "1": {
+      "Tongue1_jnt.ty": 0.9,
+      "Tongue2_jnt.ty": 0.6,
+      "Tongue3_jnt.ty": 0.4,
+      "Tongue1_jnt.tz": 2.4,
+      "Tongue2_jnt.tz": 1.3,
+      "Tongue3_jnt.tz": 1.4
+    }
+  },
+  "jaw_ctr.ty": {
+    "1": {
+      "Jaw_jnt.ty": -2.0,
+      "Jaw_jnt.rx": 10.0
+    }
+  },
+  "jaw_ctr.tx": {
+    "-1": {
+      "Jaw_jnt.rz": -20.0
+    },
+    "1": {
+      "Jaw_jnt.rz": 20.0
+    }
+  },
+  "l_eye_ctr.tx": {
+    "-1": {
+      "Eye_L_jnt.ry": -34.0
+    },
+    "1": {
+      "Eye_L_jnt.ry": 37.0
+    }
+  },
+  "l_eye_ctr.ty": {
+    "-1": {
+      "Eye_L_jnt.rx": 22.0
+    },
+    "1": {
+      "Eye_L_jnt.rx": -12.0
+    }
+  },
+  "r_eye_ctr.tx": {
+    "-1": {
+      "Eye_R_jnt.ry": -37.0
+    },
+    "1": {
+      "Eye_R_jnt.ry": 34.0
+    }
+  },
+  "r_eye_ctr.ty": {
+    "-1": {
+      "Eye_R_jnt.rx": 22.0
+    },
+    "1": {
+      "Eye_R_jnt.rx": -12.0
+    }
+  }
 }
