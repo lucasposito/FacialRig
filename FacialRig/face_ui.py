@@ -743,6 +743,8 @@ class FaceUI(QtWidgets.QDialog):
         facial_joints = [face_joint.child(index) for index in range(face_joint.childCount()) if face_joint.child(index) not in jaw_joints]
 
         # TODO: Find a way to load facial joints - Mediapipe?
+        # TODO: Make it more obvious face_mesh will be the final output
+        
         face_mesh = 'Face_Base'  # TODO: temporarily hard coded
 
         if self.teeth_skin:
@@ -842,8 +844,8 @@ class FaceUI(QtWidgets.QDialog):
             lib.delete_all_keys(ctr)
 
         # Merge the first mesh with the output one onto a copied mesh
-        # merged_skin = lib.merge_skin(self.base_head, face_mesh, self.head_field.text())
-        # MayaData.skin.load(merged_skin, face_mesh)
+        merged_skin = lib.merge_skin(self.base_head, face_mesh, self.head_field.text())
+        MayaData.skin.load(merged_skin, face_mesh)
 
         cmds.select(cl=True)
 

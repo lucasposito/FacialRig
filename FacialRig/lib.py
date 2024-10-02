@@ -3,6 +3,7 @@ from maya import cmds
 
 import math
 import copy
+import pandas as pd
 
 import MayaData
 import dem_bones
@@ -112,53 +113,27 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
         MayaData.skin.SkinData: mesh weights of mesh A (minus its given mask joint)
         and mesh B merged together
     """
-    # TODO: Refactor it to work with the new skin data format using pandas
-    base_skin = MayaData.skin.get(base_mesh)
-    result_skin = MayaData.skin.get(result_mesh)
-    output_skin = {'weights': dict(), 'influences': copy.deepcopy(base_skin['influences'])}
-    output_skin['max_influence'] = base_skin['max_influence']
+    # TODO: The math isn't properly working yet
+    base_skin = pd.DataFrame(MayaData.skin.get(base_mesh))
+    result_skin = pd.DataFrame(MayaData.skin.get(result_mesh))
 
-    mfn_skin = OpenMaya.MSelectionList().add(result_skin['name']).getDependNode(0)
-    mfn_skin = OpenMayaAnim.MFnSkinCluster(mfn_skin)
-
-    jnt = OpenMaya.MSelectionList().add(mask_jnt).getDagPath(0)
-    jnt_id = mfn_skin.indexForInfluenceObject(jnt)
-
-    old_map = dict()
-
-    total_jnts = len(base_skin['influences'].values())
-
-    for index, name in result_skin['influences'].items():
-        if index == jnt_id:
-            continue
-        output_skin['influences'][total_jnts] = name
-        old_map[index] = total_jnts
-        total_jnts += 1
-
-    for base_inf, result_inf in zip(base_skin['weights'].items(), result_skin['weights'].values()):
-        vtx_id, base_inf = base_inf
-
-        output_vtx = dict()
-        mask = 0.0
-        for id, value in result_inf.items():
-            value = round(value, 2)
-            if id == jnt_id:
-                mask = value
-                continue
-            if value > 0.0:
-                output_vtx[old_map[id]] = value
-
-        for id, value in base_inf.items():
-            value = round(value, 2)
+    for vtx in range(len(base_skin)):
+        mask = base_skin.loc[vtx, mask_jnt]
+        for jnt in result_skin.columns:
+            value = result_skin.loc[vtx, jnt]
             value = value * (max(0.0, min(1.0, mask)))
-            if value > 0.0:
-                output_vtx[id] = value
+            result_skin.loc[vtx, jnt] = value
 
-        total_sum = sum(output_vtx.values())
-        normalized_output = {key: round(value / total_sum, 4) for key, value in output_vtx.items()}
-        output_skin['weights'][vtx_id] = normalized_output
+    base_skin.drop(columns=[mask_jnt])
+    merged_skin = pd.concat([base_skin, result_skin], axis=1)
 
-    return output_skin
+    for vtx, row in merged_skin.iterrows():
+        total_sum = row.sum(axis=0)
+        if total_sum == 0:
+            continue
+        merged_skin.iloc[vtx] = [round(i / total_sum, 4) for i in row]
+
+    return merged_skin.to_dict(orient='list')
 
 
 def run_dembones(blendshape_mesh, skinned_mesh, total_frame):
