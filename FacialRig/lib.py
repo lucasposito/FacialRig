@@ -117,11 +117,10 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
     result_skin = pd.DataFrame(MayaData.skin.get(result_mesh))
 
     # Apply the mask to result_skin in a vectorized way
-    mask = base_skin[mask_jnt].clip(0.0, 1.0)  # Get mask and clip values between 0.0 and 1.0
-    result_skin = result_skin.multiply(mask, axis=0)  # Apply mask to all rows in result_skin
+    mask = result_skin[mask_jnt].clip(0.0, 1.0)  # Get mask and clip values between 0.0 and 1.0
+    base_skin = base_skin.multiply(mask, axis=0)  # Apply mask to all rows in result_skin
 
-    # Drop the mask column from base_skin
-    base_skin.drop(columns=[mask_jnt], inplace=True)
+    result_skin.drop(columns=[mask_jnt], inplace=True)
 
     # Merge the DataFrames horizontally
     merged_skin = pd.concat([base_skin, result_skin], axis=1)
