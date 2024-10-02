@@ -113,25 +113,29 @@ def merge_skin(base_mesh, result_mesh, mask_jnt):
         MayaData.skin.SkinData: mesh weights of mesh A (minus its given mask joint)
         and mesh B merged together
     """
-    # TODO: The math isn't properly working yet
     base_skin = pd.DataFrame(MayaData.skin.get(base_mesh))
     result_skin = pd.DataFrame(MayaData.skin.get(result_mesh))
 
-    for vtx in range(len(base_skin)):
-        mask = base_skin.loc[vtx, mask_jnt]
-        for jnt in result_skin.columns:
-            value = result_skin.loc[vtx, jnt]
-            value = value * (max(0.0, min(1.0, mask)))
-            result_skin.loc[vtx, jnt] = value
+    # Apply the mask to result_skin in a vectorized way
+    mask = base_skin[mask_jnt].clip(0.0, 1.0)  # Get mask and clip values between 0.0 and 1.0
+    result_skin = result_skin.multiply(mask, axis=0)  # Apply mask to all rows in result_skin
 
-    base_skin.drop(columns=[mask_jnt])
+    # Drop the mask column from base_skin
+    base_skin.drop(columns=[mask_jnt], inplace=True)
+
+    # Merge the DataFrames horizontally
     merged_skin = pd.concat([base_skin, result_skin], axis=1)
 
-    for vtx, row in merged_skin.iterrows():
-        total_sum = row.sum(axis=0)
+    # Normalize each row, so it sums to 1.0, adjusting the last element if necessary
+    def normalize_row(row):
+        total_sum = row.sum()
         if total_sum == 0:
-            continue
-        merged_skin.iloc[vtx] = [round(i / total_sum, 4) for i in row]
+            return row  # Skip rows that sum to 0
+        normalized_row = row / total_sum  # Normalize the row
+        normalized_row.iloc[-1] += 1.0 - normalized_row.sum()  # Adjust last element to sum exactly to 1.0
+        return normalized_row.round(4)  # Round to 4 decimal places
+
+    merged_skin = merged_skin.apply(normalize_row, axis=1)
 
     return merged_skin.to_dict(orient='list')
 
