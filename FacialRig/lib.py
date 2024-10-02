@@ -100,9 +100,13 @@ def set_key(node, attribute, value=None, frame=None):
 
 
 def merge_skin(base_mesh, result_mesh, mask_jnt):
-    """It takes the weight influences of a given joint and uses it as a mask to
-    merge all the joints and weights of a result mesh onto the rest of
-    joints and weights of a base mesh
+    """ This function gets the influences of a joint in the result mesh as a mask to subtract
+        from every joints influence in the base mesh, where:
+            - 0.0 removes the joint influence from the base mesh entirely.
+            - 1.0 keeps the full joint influence from the base mesh.
+        After applying the mask, the function removes the mask joint from the result mesh, combines
+        the adjusted base mesh with the result mesh, and normalizes the combined weights so that
+        the total influence for each vertex sums to 1.0.
 
     Args:
         base_mesh (str, OpenMaya.MObject): First Mesh
