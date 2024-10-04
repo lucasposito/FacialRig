@@ -20,6 +20,6 @@ Save it as a shelf button for your convenience.
 - Click "Import" and select all the masks from the respective folder.
 - Click "Create Rig".
 
-### Special thanks
+### Acknowledgments
 - Truong for the <a href="https://truongcgartist.gumroad.com/l/oxrig?layout=profile">Ox Rig</a>
-- Robert Joosten for the incredible work on Dembones for Maya
+- <a href="https://github.com/robertjoosten">Robert Joosten</a> for Dembones in Maya
