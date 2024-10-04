@@ -2,7 +2,6 @@ from maya.api import OpenMaya, OpenMayaAnim
 from maya import cmds
 
 import math
-import copy
 import pandas as pd
 
 import MayaData
@@ -174,4 +173,3 @@ def run_dembones(blendshape_mesh, skinned_mesh, total_frame):
         OpenMaya.MDoubleArray(dembones.weights)
     )
     OpenMaya.MGlobal.displayInfo('Dembones Finished')
-
