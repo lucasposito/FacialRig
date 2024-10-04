@@ -14,8 +14,12 @@ FacialRig.FaceUI.show_ui()
 
 Save it as a shelf button for your convenience.
 
-# Example
+## Example
 - Import FaceShapes_man.fbx or FaceShapes_ox.fbx example file into a Maya scene.
 - Select "Head_Base" mesh and click "Load Base Head" in the Facial Tool.
 - Click "Import" and select all the masks from the respective folder.
 - Click "Create Rig".
+
+### Special thanks
+- Truong for the <a href="https://truongcgartist.gumroad.com/l/oxrig?layout=profile">Ox Rig</a>
+- Robert Joosten for the incredible work on Dembones for Maya
