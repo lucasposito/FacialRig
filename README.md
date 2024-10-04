@@ -21,5 +21,5 @@ Save it as a shelf button for your convenience.
 - Click "Create Rig".
 
 ### Acknowledgments
-- Truong for the <a href="https://truongcgartist.gumroad.com/l/oxrig?layout=profile">Ox Rig</a>
+- Chau Vo Ba Truong for the <a href="https://truongcgartist.gumroad.com/l/oxrig?layout=profile">Ox Rig</a>
 - <a href="https://github.com/robertjoosten">Robert Joosten</a> for Dembones in Maya
