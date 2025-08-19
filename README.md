@@ -1,4 +1,5 @@
 # Facial Rig Tool
+[View the Miro board]([https://miro.com/app/board/your-board-id/](https://miro.com/app/board/uXjVKVxIuqE=/))
 These are all the external libraries you’ll need:
 
 - <a href="https://github.com/robertjoosten/maya-dem-bones"> Dembones </a>
